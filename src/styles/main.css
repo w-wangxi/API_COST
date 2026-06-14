@@ -62,6 +62,12 @@ h2 {
   font-size: 1.5rem;
 }
 
+h3 {
+  margin: 0 0 12px;
+  color: #172026;
+  font-size: 1.08rem;
+}
+
 .hero-copy,
 .section-block p,
 .footer-note p {
@@ -153,6 +159,109 @@ h2 {
   background: #ffffff;
 }
 
+.preset-panel {
+  margin-top: 20px;
+}
+
+.preset-heading {
+  margin-bottom: 10px;
+  color: #334148;
+  font-weight: 800;
+}
+
+.preset-buttons {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.preset-button {
+  display: grid;
+  gap: 6px;
+  min-height: 82px;
+  border: 1px solid #c9d3d8;
+  border-radius: 8px;
+  padding: 12px;
+  background: #ffffff;
+  color: #172026;
+  text-align: left;
+  cursor: pointer;
+}
+
+.preset-button:hover {
+  border-color: #0d6f63;
+}
+
+.preset-button strong {
+  font-size: 0.98rem;
+}
+
+.preset-button span {
+  color: #53616a;
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+.form-alert {
+  margin-top: 18px;
+  border-left: 4px solid #b83a3a;
+  padding: 12px 14px;
+  background: #fff2f2;
+  color: #8d2525;
+  font-weight: 700;
+}
+
+.result-panel {
+  margin-top: 24px;
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.summary-card {
+  display: grid;
+  gap: 8px;
+  min-height: 132px;
+  border: 1px solid #d9e0e4;
+  border-radius: 8px;
+  padding: 18px;
+  background: #ffffff;
+}
+
+.summary-card span {
+  color: #53616a;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.summary-card strong {
+  color: #172026;
+  font-size: 1.35rem;
+  line-height: 1.2;
+}
+
+.summary-card em {
+  color: #0d6f63;
+  font-style: normal;
+  font-weight: 800;
+}
+
+.summary-card-strong {
+  border-color: #0d6f63;
+  box-shadow: inset 4px 0 0 #0d6f63;
+}
+
+.result-copy {
+  margin: 18px 0 0;
+}
+
+.pricing-block {
+  margin-top: 24px;
+}
+
 .table-shell {
   width: 100%;
   margin-top: 20px;
@@ -176,6 +285,52 @@ td {
 th {
   color: #334148;
   font-size: 0.9rem;
+}
+
+.rank-badge,
+.status-badge {
+  display: inline-flex;
+  min-height: 24px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  padding: 0 9px;
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.rank-badge {
+  min-width: 24px;
+  background: #e9eef1;
+  color: #334148;
+}
+
+.model-name {
+  margin-right: 8px;
+  font-weight: 800;
+}
+
+.status-badge {
+  background: #e0f3ee;
+  color: #0d6f63;
+}
+
+.status-badge.muted {
+  background: #f3ebe0;
+  color: #8a4d12;
+}
+
+.result-lowest td {
+  background: #f3fbf8;
+}
+
+.result-highest td {
+  background: #fff9f0;
+}
+
+.total-cost {
+  color: #0d6f63;
+  font-weight: 900;
 }
 
 .footer-note {
