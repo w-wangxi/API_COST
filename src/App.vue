@@ -1,5 +1,5 @@
 <template>
-  <main class="app-shell">
+  <main class="app-shell" aria-label="AI API Cost Calculator">
     <HeroSection />
     <TextCostCalculator />
     <ImageCostCalculator />
