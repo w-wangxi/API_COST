@@ -58,7 +58,7 @@ server.listen(port, host, () => {
 
 function setCorsHeaders(response) {
   response.setHeader('access-control-allow-origin', corsOrigin)
-  response.setHeader('access-control-allow-methods', 'GET,OPTIONS')
+  response.setHeader('access-control-allow-methods', 'GET,POST,OPTIONS')
   response.setHeader('access-control-allow-headers', 'content-type,authorization')
 }
 

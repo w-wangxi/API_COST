@@ -1,17 +1,11 @@
-import { mkdir, readFile, writeFile } from 'node:fs/promises'
-import path from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { readPricingCache, writePricingCache } from './cacheStore.js'
 import { refreshPricingData } from './pricingSources.js'
 
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
-const cacheDir = path.join(__dirname, 'cache')
-const cacheFile = path.join(cacheDir, 'pricing-cache.json')
 const cacheVersion = 'deepseek-live-pricing-v8-search-discovery'
 
 export async function getPricingData(options = {}) {
   const today = getLocalDateString()
-  const cache = await readCache()
+  const { cache, store } = await readPricingCache()
   const forceRefresh = Boolean(options.forceRefresh)
 
   if (
@@ -22,6 +16,7 @@ export async function getPricingData(options = {}) {
   ) {
     return withMetadata(cache.data, {
       source: 'backend-cache',
+      cacheStore: store,
       fromCache: true,
       cacheDate: cache.cacheDate,
       lastUpdatedAt: cache.lastUpdatedAt,
@@ -37,10 +32,11 @@ export async function getPricingData(options = {}) {
       data: freshData,
     }
 
-    await writeCache(nextCache)
+    const nextStore = await writePricingCache(nextCache)
 
     return withMetadata(freshData, {
       source: 'backend-deepseek-refresh',
+      cacheStore: nextStore,
       fromCache: false,
       cacheDate: nextCache.cacheDate,
       lastUpdatedAt: nextCache.lastUpdatedAt,
@@ -49,6 +45,7 @@ export async function getPricingData(options = {}) {
     if (cache?.version === cacheVersion && isValidCache(cache)) {
       return withMetadata(cache.data, {
         source: 'backend-stale-cache',
+        cacheStore: store,
         fromCache: true,
         stale: true,
         cacheDate: cache.cacheDate,
@@ -59,19 +56,6 @@ export async function getPricingData(options = {}) {
 
     throw error
   }
-}
-
-async function readCache() {
-  try {
-    return JSON.parse(await readFile(cacheFile, 'utf8'))
-  } catch {
-    return null
-  }
-}
-
-async function writeCache(cache) {
-  await mkdir(cacheDir, { recursive: true })
-  await writeFile(cacheFile, `${JSON.stringify(cache, null, 2)}\n`, 'utf8')
 }
 
 function isValidCache(cache) {

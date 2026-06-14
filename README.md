@@ -9,7 +9,7 @@
 - 成本排序：自动按预计月成本从低到高排序。
 - 场景预设：内置学习助手、客服机器人、内容生成、代码助手和图片生成工具。
 - 独立价格页：价格来源与查询日期在 `#/pricing` 页面展示，来源名称可跳转官网。
-- 每日价格缓存：后端每天最多调用一次 DeepSeek API，今天已更新则直接返回缓存。
+- 每日价格缓存：后端优先使用 Redis，今天已更新则直接返回缓存；未配置 Redis 时退回本地文件缓存。
 
 ## 技术栈
 
@@ -37,7 +37,12 @@ VITE_API_BASE_URL=http://127.0.0.1:3001
 BACKEND_HOST=127.0.0.1
 BACKEND_PORT=3001
 CORS_ORIGIN=*
+REDIS_URL=redis://127.0.0.1:6379
+REDIS_PRICING_CACHE_KEY=api-cost:pricing-cache
+REDIS_CONNECT_TIMEOUT_MS=2000
 ```
+
+`REDIS_URL` 可选。本地没有 Redis 时可以留空，后端会退回 `backend/cache/` 本地文件缓存；生产环境建议配置 Redis。
 
 ## 本地运行
 
@@ -60,14 +65,15 @@ GET /api/pricing
 
 `GET /api/pricing` 的逻辑：
 
-1. 读取 `backend/cache/pricing-cache.json`。
-2. 如果缓存日期是今天，直接返回缓存。
-3. 如果今天还没有缓存，后端抓取 OpenAI、Anthropic、fal.ai 官方价格页文本。
-4. 后端调用 DeepSeek API，从官方页面文本中抽取结构化价格数据。
-5. 写入当天缓存。
-6. 如果刷新失败但存在同版本旧缓存，则返回旧缓存并标记为 `stale`。
+1. 优先读取 Redis 中的 `REDIS_PRICING_CACHE_KEY`。
+2. 如果未配置 Redis 或 Redis 不可用，则读取 `backend/cache/pricing-cache.json` 作为本地兜底。
+3. 如果缓存日期是今天，直接返回缓存。
+4. 如果今天还没有缓存，后端抓取官方价格页和搜索发现页文本。
+5. 后端调用 DeepSeek API，从页面文本中抽取结构化价格数据。
+6. 写入当天缓存。配置 Redis 时写入 Redis；否则写入本地文件。
+7. 如果刷新失败但存在同版本旧缓存，则返回旧缓存并标记为 `stale`。
 
-缓存目录 `backend/cache/` 不提交。
+本地缓存目录 `backend/cache/` 不提交；生产环境建议配置 Redis。
 
 ## 价格数据来源
 
@@ -111,7 +117,8 @@ npm run dev:backend
 
 - 前端可以部署到 Vercel、Netlify 或 Cloudflare Pages。
 - 后端需要部署到支持 Node.js 服务的平台，例如 Render、Railway、Fly.io 或自有服务器。
+- 缓存建议使用 Redis，例如 Upstash Redis、Redis Cloud、Railway Redis 或自建 Redis。
 - 部署前端时，将 `VITE_API_BASE_URL` 设置为后端公网地址。
-- 部署后端时，配置 `DEEPSEEK_API_KEY`、`CORS_ORIGIN` 等环境变量。
+- 部署后端时，配置 `DEEPSEEK_API_KEY`、`CORS_ORIGIN`、`REDIS_URL` 等环境变量。
 
 公网访问地址：待补充
