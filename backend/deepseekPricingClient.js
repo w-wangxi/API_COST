@@ -261,16 +261,8 @@ function normalizePricingPayload(payload, sourceSnapshots) {
   const missingCoreProviders = getMissingCoreProviders(textModels)
   const staleLatestProviders = getStaleLatestProviders(textModels, imageModels, sourceSnapshots)
 
-  if (missingCoreProviders.length) {
-    throw new Error(
-      `DeepSeek pricing payload is missing required popular providers: ${missingCoreProviders.join(', ')}`,
-    )
-  }
-
-  if (staleLatestProviders.length) {
-    throw new Error(
-      `DeepSeek pricing payload did not use latest discovered models for: ${staleLatestProviders.join(', ')}`,
-    )
+  if (!textModels.length && !imageModels.length) {
+    throw new Error('DeepSeek pricing payload did not include any usable model prices')
   }
 
   return {
@@ -282,6 +274,9 @@ function normalizePricingPayload(payload, sourceSnapshots) {
       ...payload.metadata,
       source: 'deepseek-refresh',
       deepseekModel,
+      missingCoreProviders,
+      staleLatestProviders,
+      warnings: buildPricingWarnings(missingCoreProviders, staleLatestProviders),
       officialSources: sourceSnapshots.map(({ provider, name, url, sourceType, ok, status, fetchedAt }) => ({
         provider,
         name,
@@ -293,6 +288,20 @@ function normalizePricingPayload(payload, sourceSnapshots) {
       })),
     },
   }
+}
+
+function buildPricingWarnings(missingCoreProviders, staleLatestProviders) {
+  const warnings = []
+
+  if (missingCoreProviders.length) {
+    warnings.push(`Missing popular providers: ${missingCoreProviders.join(', ')}`)
+  }
+
+  if (staleLatestProviders.length) {
+    warnings.push(`Latest discovered models were not extracted for: ${staleLatestProviders.join(', ')}`)
+  }
+
+  return warnings
 }
 
 function getStaleLatestProviders(textModels, imageModels, sourceSnapshots) {
