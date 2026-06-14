@@ -6,11 +6,17 @@
     <div class="calculator-grid">
       <label class="field">
         <span>每月图片数量</span>
-        <input v-model.number="imageCount" type="number" min="1" />
+        <input v-model.number="imageCount" type="number" min="1" :max="MAX_IMAGE_COUNT" />
       </label>
       <label class="field">
         <span>每张图 megapixel</span>
-        <input v-model.number="megapixelPerImage" type="number" min="0.1" step="0.1" />
+        <input
+          v-model.number="megapixelPerImage"
+          type="number"
+          min="0.1"
+          :max="MAX_MEGAPIXEL_PER_IMAGE"
+          step="0.1"
+        />
       </label>
     </div>
 
@@ -35,7 +41,7 @@
       </div>
     </div>
 
-    <p v-if="hasInvalidInput" class="form-alert">请输入有效的正数</p>
+    <p v-if="validationMessage" class="form-alert">{{ validationMessage }}</p>
 
     <div v-else class="result-panel">
       <div class="summary-grid">
@@ -80,12 +86,27 @@ import {
 const imageCount = ref(10000)
 const megapixelPerImage = ref(1)
 
-const hasInvalidInput = computed(
-  () => !isPositiveNumber(imageCount.value) || !isPositiveNumber(megapixelPerImage.value),
-)
+const MAX_IMAGE_COUNT = 10000000
+const MAX_MEGAPIXEL_PER_IMAGE = 100
+
+const validationMessage = computed(() => {
+  if (!isPositiveNumber(imageCount.value) || !isPositiveNumber(megapixelPerImage.value)) {
+    return '请输入有效的正数'
+  }
+
+  if (Number(imageCount.value) > MAX_IMAGE_COUNT) {
+    return `每月图片数量不应超过 ${formatNumber(MAX_IMAGE_COUNT)}`
+  }
+
+  if (Number(megapixelPerImage.value) > MAX_MEGAPIXEL_PER_IMAGE) {
+    return `每张图大小不应超过 ${MAX_MEGAPIXEL_PER_IMAGE} megapixel`
+  }
+
+  return ''
+})
 
 const results = computed(() => {
-  if (hasInvalidInput.value) {
+  if (validationMessage.value) {
     return []
   }
 

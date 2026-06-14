@@ -6,15 +6,20 @@
     <div class="calculator-grid">
       <label class="field">
         <span>平均输入 tokens</span>
-        <input v-model.number="inputTokens" type="number" min="1" />
+        <input v-model.number="inputTokens" type="number" min="1" :max="MAX_TOKENS" />
       </label>
       <label class="field">
         <span>平均输出 tokens</span>
-        <input v-model.number="outputTokens" type="number" min="1" />
+        <input v-model.number="outputTokens" type="number" min="1" :max="MAX_TOKENS" />
       </label>
       <label class="field">
         <span>每月请求次数</span>
-        <input v-model.number="monthlyRequests" type="number" min="1" />
+        <input
+          v-model.number="monthlyRequests"
+          type="number"
+          min="1"
+          :max="MAX_MONTHLY_REQUESTS"
+        />
       </label>
       <label class="toggle-field">
         <input v-model="useCachedInput" type="checkbox" />
@@ -24,7 +29,7 @@
 
     <PresetButtons :presets="textPresets" @select="applyPreset" />
 
-    <p v-if="hasInvalidInput" class="form-alert">请输入有效的正数</p>
+    <p v-if="validationMessage" class="form-alert">{{ validationMessage }}</p>
 
     <div v-else class="result-panel">
       <div class="summary-grid">
@@ -76,15 +81,31 @@ const outputTokens = ref(500)
 const monthlyRequests = ref(100000)
 const useCachedInput = ref(false)
 
-const hasInvalidInput = computed(
-  () =>
+const MAX_TOKENS = 1000000
+const MAX_MONTHLY_REQUESTS = 100000000
+
+const validationMessage = computed(() => {
+  if (
     !isPositiveNumber(inputTokens.value) ||
     !isPositiveNumber(outputTokens.value) ||
-    !isPositiveNumber(monthlyRequests.value),
-)
+    !isPositiveNumber(monthlyRequests.value)
+  ) {
+    return '请输入有效的正数'
+  }
+
+  if (Number(inputTokens.value) > MAX_TOKENS || Number(outputTokens.value) > MAX_TOKENS) {
+    return `单次输入或输出 tokens 不应超过 ${formatNumber(MAX_TOKENS)}`
+  }
+
+  if (Number(monthlyRequests.value) > MAX_MONTHLY_REQUESTS) {
+    return `每月请求次数不应超过 ${formatNumber(MAX_MONTHLY_REQUESTS)}`
+  }
+
+  return ''
+})
 
 const results = computed(() => {
-  if (hasInvalidInput.value) {
+  if (validationMessage.value) {
     return []
   }
 

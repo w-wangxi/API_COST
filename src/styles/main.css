@@ -266,11 +266,15 @@ h3 {
   width: 100%;
   margin-top: 20px;
   overflow-x: auto;
+  border: 1px solid #d9e0e4;
+  border-radius: 8px;
+  background: #ffffff;
 }
 
 table {
   width: 100%;
   border-collapse: collapse;
+  min-width: 720px;
   background: #ffffff;
 }
 
@@ -285,6 +289,10 @@ td {
 th {
   color: #334148;
   font-size: 0.9rem;
+}
+
+tbody tr:last-child td {
+  border-bottom: 0;
 }
 
 .rank-badge,
@@ -337,10 +345,39 @@ th {
   font-size: 0.95rem;
 }
 
+.footer-grid {
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) repeat(2, minmax(180px, 240px));
+  gap: 20px;
+  align-items: start;
+}
+
 .footer-title {
   margin-bottom: 8px;
   color: #172026;
   font-weight: 800;
+}
+
+.footer-label {
+  margin-bottom: 8px;
+  color: #334148;
+  font-weight: 800;
+}
+
+.footer-note a {
+  color: #0d6f63;
+  font-weight: 800;
+  word-break: break-word;
+}
+
+.footer-note span {
+  color: #53616a;
+}
+
+.disclaimer {
+  margin: 22px 0 0;
+  border-top: 1px solid #d9e0e4;
+  padding-top: 18px;
 }
 
 @media (max-width: 640px) {
@@ -352,5 +389,34 @@ th {
   .hero-section {
     min-height: auto;
     padding: 48px 0 36px;
+  }
+
+  .footer-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .calculator-grid,
+  .preset-buttons,
+  .summary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .table-shell {
+    margin-right: -12px;
+    margin-left: -12px;
+    border-right: 0;
+    border-left: 0;
+    border-radius: 0;
+  }
+
+  th,
+  td {
+    padding: 12px;
+  }
+
+  .model-name {
+    display: block;
+    margin-right: 0;
+    margin-bottom: 6px;
   }
 }
