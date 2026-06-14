@@ -12,11 +12,6 @@
         @click="$emit('select', preset)"
       >
         <strong>{{ preset.name }}</strong>
-        <span>
-          {{ formatNumber(preset.monthlyRequests) }} 次/月 · 输入
-          {{ formatNumber(preset.inputTokens) }} · 输出
-          {{ formatNumber(preset.outputTokens) }}
-        </span>
       </button>
     </div>
   </div>
@@ -31,8 +26,4 @@ defineProps({
 })
 
 defineEmits(['select'])
-
-function formatNumber(value) {
-  return new Intl.NumberFormat('en-US').format(Number(value))
-}
 </script>

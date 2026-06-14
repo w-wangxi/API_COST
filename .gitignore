@@ -1,8 +1,32 @@
+# Dependencies
 node_modules/
+
+# Build output
 dist/
+frontend/dist/
+frontend/frontend/
+
+# Runtime cache
+backend/cache/
+server/
+
+# Local environment
 .env
 .env.*
+!.env.example
+
+# Logs and diagnostics
+*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
+
+# Test and tooling output
+coverage/
+.vite/
+.cache/
+
+# OS files
+.DS_Store
+Thumbs.db

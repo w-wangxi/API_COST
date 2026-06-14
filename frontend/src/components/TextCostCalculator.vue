@@ -27,9 +27,13 @@
       </label>
     </div>
 
-    <PresetButtons :presets="textPresets" @select="applyPreset" />
+    <PresetButtons :presets="props.textPresets" @select="applyPreset" />
 
-    <p v-if="validationMessage" class="form-alert">{{ validationMessage }}</p>
+    <div v-if="hasNoModels" class="empty-state">
+      暂无文本模型价格数据。请先确认后端已完成 DeepSeek 价格刷新。
+    </div>
+
+    <p v-else-if="validationMessage" class="form-alert">{{ validationMessage }}</p>
 
     <div v-else class="result-panel">
       <div class="summary-grid">
@@ -67,7 +71,6 @@
 
 <script setup>
 import { computed, ref } from 'vue'
-import { textModels, textPresets } from '../data/pricingData'
 import CostResultTable from './CostResultTable.vue'
 import PresetButtons from './PresetButtons.vue'
 import {
@@ -76,6 +79,17 @@ import {
   isPositiveNumber,
 } from '../utils/costCalculator'
 
+const props = defineProps({
+  textModels: {
+    type: Array,
+    required: true,
+  },
+  textPresets: {
+    type: Array,
+    required: true,
+  },
+})
+
 const inputTokens = ref(1000)
 const outputTokens = ref(500)
 const monthlyRequests = ref(100000)
@@ -83,6 +97,8 @@ const useCachedInput = ref(false)
 
 const MAX_TOKENS = 1000000
 const MAX_MONTHLY_REQUESTS = 100000000
+
+const hasNoModels = computed(() => props.textModels.length === 0)
 
 const validationMessage = computed(() => {
   if (
@@ -105,12 +121,12 @@ const validationMessage = computed(() => {
 })
 
 const results = computed(() => {
-  if (validationMessage.value) {
+  if (validationMessage.value || hasNoModels.value) {
     return []
   }
 
   return calculateAllTextModels(
-    textModels,
+    props.textModels,
     Number(inputTokens.value),
     Number(outputTokens.value),
     Number(monthlyRequests.value),

@@ -1,34 +1,43 @@
 # AI API Cost Calculator
 
-海外 AI 模型价格对比与用量估算器。用户可以输入预计使用量，快速比较 OpenAI、Anthropic 和 fal.ai 的 API 成本。
+海外 AI 模型价格对比与用量估算器。前端负责成本计算与展示，后端负责每日调用 DeepSeek API 查询并整理最新价格数据。
 
 ## 功能特点
 
-- 文本模型成本估算：支持输入 tokens、输出 tokens、月请求次数和缓存输入价格。
+- 文本模型成本估算：输入 tokens、输出 tokens、月请求次数和缓存输入开关。
 - 图像模型成本估算：支持按图片计费和按 megapixel 计费。
 - 成本排序：自动按预计月成本从低到高排序。
-- 成本标识：高亮最低成本模型，并提示最高成本模型。
 - 场景预设：内置学习助手、客服机器人、内容生成、代码助手和图片生成工具。
-- 价格来源：展示官方价格页面名称和查询日期。
+- 独立价格页：价格来源与查询日期在 `#/pricing` 页面展示，来源名称可跳转官网。
+- 每日价格缓存：后端每天最多调用一次 DeepSeek API，今天已更新则直接返回缓存。
 
 ## 技术栈
 
-- Vue 3
-- Vite
-- JavaScript
-- CSS
+- Frontend：Vue 3、Vite、JavaScript、CSS
+- Backend：Node.js HTTP Server
+- Pricing Agent：DeepSeek Chat Completions API
 
-## 价格数据来源
+## 目录结构
 
-查询日期：2026-06-14
+```text
+frontend/        # 前端 Vue 应用
+backend/         # 独立后端 API 服务
+scripts/dev.js   # 同时启动前端和后端的开发脚本
+```
 
-| 平台 | 官方页面 |
-| --- | --- |
-| OpenAI | OpenAI API Pricing |
-| Anthropic | Anthropic Claude API Pricing |
-| fal.ai | fal.ai Pricing |
+## 环境变量
 
-> 价格数据写入本地配置文件 `src/data/pricingData.js`。由于 API 价格可能变化，实际费用请以官方账单和官方价格页面为准。
+复制 `.env.example` 为 `.env`，然后填入 DeepSeek API Key：
+
+```bash
+DEEPSEEK_API_KEY=your_deepseek_api_key_here
+DEEPSEEK_BASE_URL=https://api.deepseek.com
+DEEPSEEK_MODEL=deepseek-chat
+VITE_API_BASE_URL=http://127.0.0.1:3001
+BACKEND_HOST=127.0.0.1
+BACKEND_PORT=3001
+CORS_ORIGIN=*
+```
 
 ## 本地运行
 
@@ -37,41 +46,72 @@ npm install
 npm run dev
 ```
 
-## 打包
+`npm run dev` 会同时启动：
+
+- 后端 API：`http://127.0.0.1:3001`
+- 前端 Vite 页面：以终端显示的 `Local` 地址为准
+
+## 后端接口
+
+```text
+GET /api/health
+GET /api/pricing
+```
+
+`GET /api/pricing` 的逻辑：
+
+1. 读取 `backend/cache/pricing-cache.json`。
+2. 如果缓存日期是今天，直接返回缓存。
+3. 如果今天还没有缓存，后端抓取 OpenAI、Anthropic、fal.ai 官方价格页文本。
+4. 后端调用 DeepSeek API，从官方页面文本中抽取结构化价格数据。
+5. 写入当天缓存。
+6. 如果刷新失败但存在同版本旧缓存，则返回旧缓存并标记为 `stale`。
+
+缓存目录 `backend/cache/` 不提交。
+
+## 价格数据来源
+
+| 平台 | 官方页面 |
+| --- | --- |
+| OpenAI | OpenAI API Pricing |
+| Anthropic | Anthropic Claude API Pricing |
+| fal.ai | fal.ai Pricing |
+| Google | Gemini API Pricing |
+| Mistral AI | Mistral AI Pricing |
+| DeepSeek | DeepSeek API Pricing |
+| xAI | xAI API Models and Pricing |
+| Groq | Groq Models |
+| Together AI | Together AI Pricing |
+
+前端页面会优先请求后端接口 `GET /api/pricing` 获取价格数据。`frontend/src/data/pricingData.js` 不再保存模型价格，只保留场景预设。
+
+## 打包前端
 
 ```bash
 npm run build
 ```
 
-## 预览
+## 分别启动
+
+只启动前端：
 
 ```bash
-npm run preview
+npm run dev:frontend
+```
+
+只启动后端：
+
+```bash
+npm run dev:backend
 ```
 
 ## 部署
 
-推荐部署到 Vercel、Netlify、Cloudflare Pages 或 GitHub Pages。
+当前是前后端分离架构：
+
+- 前端可以部署到 Vercel、Netlify 或 Cloudflare Pages。
+- 后端需要部署到支持 Node.js 服务的平台，例如 Render、Railway、Fly.io 或自有服务器。
+- 部署前端时，将 `VITE_API_BASE_URL` 设置为后端公网地址。
+- 部署后端时，配置 `DEEPSEEK_API_KEY`、`CORS_ORIGIN` 等环境变量。
 
 公网访问地址：待补充
-
-## 项目地址
-
-GitHub：<https://github.com/w-wangxi/API_COST>
-
-## 项目截图
-
-截图位置：待补充
-
-## 后续优化方向
-
-- 增加更多模型和 API 平台。
-- 增加人民币汇率换算。
-- 增加 Batch API 折扣计算。
-- 增加长上下文价格计算。
-- 增加图像、视频、音频多模态模型。
-- 支持用户导出估算结果。
-- 支持价格数据自动更新。
-- 支持不同业务场景成本模板。
-- 增加成本预算提醒。
-- 增加模型性价比评分。

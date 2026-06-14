@@ -1,7 +1,7 @@
 <template>
   <section id="image-calculator" class="section-block">
     <h2>图像模型成本估算</h2>
-    <p>输入图片数量和图片尺寸后，对比 fal.ai 图像模型的预计成本。</p>
+    <p>输入图片数量和图片尺寸后，对比不同图像模型的预计成本。</p>
 
     <div class="calculator-grid">
       <label class="field">
@@ -26,22 +26,22 @@
       </div>
       <div class="preset-buttons">
         <button
-          v-for="preset in imagePresets"
+          v-for="preset in props.imagePresets"
           :key="preset.name"
           type="button"
           class="preset-button"
           @click="applyPreset(preset)"
         >
           <strong>{{ preset.name }}</strong>
-          <span>
-            {{ formatNumber(preset.imageCount) }} 张/月 ·
-            {{ preset.megapixelPerImage }} megapixel/张
-          </span>
         </button>
       </div>
     </div>
 
-    <p v-if="validationMessage" class="form-alert">{{ validationMessage }}</p>
+    <div v-if="hasNoModels" class="empty-state">
+      暂无图像模型价格数据。请先确认后端已完成 DeepSeek 价格刷新。
+    </div>
+
+    <p v-else-if="validationMessage" class="form-alert">{{ validationMessage }}</p>
 
     <div v-else class="result-panel">
       <div class="summary-grid">
@@ -75,7 +75,6 @@
 
 <script setup>
 import { computed, ref } from 'vue'
-import { imageModels, imagePresets } from '../data/pricingData'
 import ImageCostResultTable from './ImageCostResultTable.vue'
 import {
   calculateAllImageModels,
@@ -83,11 +82,24 @@ import {
   isPositiveNumber,
 } from '../utils/costCalculator'
 
+const props = defineProps({
+  imageModels: {
+    type: Array,
+    required: true,
+  },
+  imagePresets: {
+    type: Array,
+    required: true,
+  },
+})
+
 const imageCount = ref(10000)
 const megapixelPerImage = ref(1)
 
 const MAX_IMAGE_COUNT = 10000000
 const MAX_MEGAPIXEL_PER_IMAGE = 100
+
+const hasNoModels = computed(() => props.imageModels.length === 0)
 
 const validationMessage = computed(() => {
   if (!isPositiveNumber(imageCount.value) || !isPositiveNumber(megapixelPerImage.value)) {
@@ -106,12 +118,12 @@ const validationMessage = computed(() => {
 })
 
 const results = computed(() => {
-  if (validationMessage.value) {
+  if (validationMessage.value || hasNoModels.value) {
     return []
   }
 
   return calculateAllImageModels(
-    imageModels,
+    props.imageModels,
     Number(imageCount.value),
     Number(megapixelPerImage.value),
   )
