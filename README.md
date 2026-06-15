@@ -1,35 +1,81 @@
 # AI API Cost Calculator
 
-海外 AI 模型价格对比与用量估算器。前端负责成本计算与展示，后端负责每日调用 DeepSeek API 查询并整理最新价格数据。
+A small deployed web tool for estimating and comparing monthly API costs across popular overseas AI models.
 
-## 功能特点
+The app lets users enter expected usage, such as monthly requests, input tokens, output tokens, generated image count, and image size. It then calculates the estimated monthly cost for text and image models and sorts the results from cheapest to most expensive.
 
-- 文本模型成本估算：输入 tokens、输出 tokens、月请求次数和缓存输入开关。
-- 图像模型成本估算：支持按图片计费和按 megapixel 计费。
-- 成本排序：自动按预计月成本从低到高排序。
-- 场景预设：内置学习助手、客服机器人、内容生成、代码助手和图片生成工具。
-- 独立价格页：价格来源与查询日期在 `#/pricing` 页面展示，来源名称可跳转官网。
-- 每日价格缓存：后端优先使用 Redis，今天已更新则直接返回缓存；未配置 Redis 时退回本地文件缓存。
+Live demo: https://api-cost-eta.vercel.app
 
-## 技术栈
+Backend API: https://api-cost-backend.onrender.com
 
-- Frontend：Vue 3、Vite、JavaScript、CSS
-- Backend：Node.js HTTP Server
-- Pricing Agent：DeepSeek Chat Completions API
+## What This Project Does
 
-## 目录结构
+- Estimates monthly cost for text models using input token price, cached input token price, and output token price.
+- Estimates image generation cost for models billed per image or per megapixel.
+- Shows pricing source names, official links, and query dates on a separate pricing page.
+- Fetches pricing data from a backend API instead of hardcoding model prices in the frontend.
+- Uses DeepSeek to extract structured pricing data from official pricing pages and discovery sources.
+- Caches pricing data daily with Redis first, and falls back to a local file cache when Redis is not configured.
+- Deploys as a frontend/backend separated project:
+  - Frontend on Vercel
+  - Backend on Render
+  - Redis cache on Upstash
+
+## Tech Stack
+
+### Frontend
+
+- Vue 3
+- Vite
+- JavaScript
+- CSS
+
+### Backend
+
+- Node.js HTTP server
+- DeepSeek Chat Completions API
+- Redis cache via the `redis` npm package
+
+### Deployment
+
+- Vercel for the frontend
+- Render for the backend
+- Upstash Redis for production cache
+
+## Project Structure
 
 ```text
-frontend/        # 前端 Vue 应用
-backend/         # 独立后端 API 服务
-scripts/dev.js   # 同时启动前端和后端的开发脚本
+frontend/          Vue + Vite frontend app
+backend/           Node.js backend API
+scripts/dev.js     Local development script that starts frontend and backend together
+docs/              GitHub Pages writeup
 ```
 
-## 环境变量
+## Local Setup
 
-复制 `.env.example` 为 `.env`，然后填入 DeepSeek API Key：
+### 1. Install dependencies
 
 ```bash
+npm install
+```
+
+### 2. Create environment file
+
+Copy `.env.example` to `.env`:
+
+```bash
+cp .env.example .env
+```
+
+On Windows PowerShell:
+
+```powershell
+Copy-Item .env.example .env
+```
+
+Then fill in at least:
+
+```env
 DEEPSEEK_API_KEY=your_deepseek_api_key_here
 DEEPSEEK_BASE_URL=https://api.deepseek.com
 DEEPSEEK_MODEL=deepseek-chat
@@ -37,88 +83,172 @@ VITE_API_BASE_URL=http://127.0.0.1:3001
 BACKEND_HOST=127.0.0.1
 BACKEND_PORT=3001
 CORS_ORIGIN=*
+```
+
+Redis is optional for local development:
+
+```env
 REDIS_URL=redis://127.0.0.1:6379
 REDIS_PRICING_CACHE_KEY=api-cost:pricing-cache
 REDIS_CONNECT_TIMEOUT_MS=2000
 ```
 
-`REDIS_URL` 可选。本地没有 Redis 时可以留空，后端会退回 `backend/cache/` 本地文件缓存；生产环境建议配置 Redis。
+If `REDIS_URL` is not set or Redis is unavailable, the backend falls back to `backend/cache/pricing-cache.json`.
 
-## 本地运行
+### 3. Run locally
 
 ```bash
-npm install
 npm run dev
 ```
 
-`npm run dev` 会同时启动：
+This starts:
 
-- 后端 API：`http://127.0.0.1:3001`
-- 前端 Vite 页面：以终端显示的 `Local` 地址为准
+- Backend API at `http://127.0.0.1:3001`
+- Vite frontend at the local URL printed by Vite
 
-## 后端接口
+You can also run them separately:
 
-```text
-GET /api/health
-GET /api/pricing
+```bash
+npm run dev:backend
+npm run dev:frontend
 ```
 
-`GET /api/pricing` 的逻辑：
-
-1. 优先读取 Redis 中的 `REDIS_PRICING_CACHE_KEY`。
-2. 如果未配置 Redis 或 Redis 不可用，则读取 `backend/cache/pricing-cache.json` 作为本地兜底。
-3. 如果缓存日期是今天，直接返回缓存。
-4. 如果今天还没有缓存，后端抓取官方价格页和搜索发现页文本。
-5. 后端调用 DeepSeek API，从页面文本中抽取结构化价格数据。
-6. 写入当天缓存。配置 Redis 时写入 Redis；否则写入本地文件。
-7. 如果刷新失败但存在同版本旧缓存，则返回旧缓存并标记为 `stale`。
-
-本地缓存目录 `backend/cache/` 不提交；生产环境建议配置 Redis。
-
-## 价格数据来源
-
-| 平台 | 官方页面 |
-| --- | --- |
-| OpenAI | OpenAI API Pricing |
-| Anthropic | Anthropic Claude API Pricing |
-| fal.ai | fal.ai Pricing |
-| Google | Gemini API Pricing |
-| Mistral AI | Mistral AI Pricing |
-| DeepSeek | DeepSeek API Pricing |
-| xAI | xAI API Models and Pricing |
-| Groq | Groq Models |
-| Together AI | Together AI Pricing |
-
-前端页面会优先请求后端接口 `GET /api/pricing` 获取价格数据。`frontend/src/data/pricingData.js` 不再保存模型价格，只保留场景预设。
-
-## 打包前端
+## Build
 
 ```bash
 npm run build
 ```
 
-## 分别启动
+The frontend production build is generated in:
 
-只启动前端：
-
-```bash
-npm run dev:frontend
+```text
+frontend/dist
 ```
 
-只启动后端：
+## API Endpoints
 
-```bash
-npm run dev:backend
+```text
+GET /api/health
+GET /api/pricing
+GET /api/pricing?refresh=1
+POST /api/pricing/refresh
 ```
 
-## 部署
+`GET /api/pricing` returns cached pricing data when today's cache exists. Otherwise, the backend refreshes pricing data through the extraction pipeline.
 
-当前是前后端分离架构：
+## Pricing Calculation
 
-- 前端可以部署到 Vercel、Netlify 或 Cloudflare Pages。
-- 后端需要部署到支持 Node.js 服务的平台，例如 Render、Railway、Fly.io 或自有服务器。
-- 缓存建议使用 Redis，例如 Upstash Redis、Redis Cloud、Railway Redis 或自建 Redis。
-- 部署前端时，将 `VITE_API_BASE_URL` 设置为后端公网地址。
-- 部署后端时，配置 `DEEPSEEK_API_KEY`、`CORS_ORIGIN`、`REDIS_URL` 等环境变量。
+### Text models
 
-公网访问地址：待补充
+Most text model APIs are priced in `USD / 1M tokens`.
+
+```text
+inputCost = inputTokens * monthlyRequests / 1,000,000 * inputPrice
+outputCost = outputTokens * monthlyRequests / 1,000,000 * outputPrice
+totalCost = inputCost + outputCost
+```
+
+If cached input pricing is enabled and the model has a cached input price, the calculator uses `cachedInputPrice` for the input cost.
+
+### Image models
+
+For models billed per image:
+
+```text
+totalCost = imageCount * price
+```
+
+For models billed per megapixel:
+
+```text
+totalCost = imageCount * megapixelPerImage * price
+```
+
+## Pricing Data Flow
+
+1. The frontend requests `GET /api/pricing`.
+2. The backend checks today's Redis cache.
+3. If Redis is unavailable, it checks the local file cache.
+4. If no valid cache exists, the backend fetches pricing source pages.
+5. DeepSeek extracts structured text and image model pricing.
+6. The backend stores the refreshed payload in Redis or local cache.
+7. The frontend renders models, source links, query dates, and calculators.
+
+Model prices are not stored in `frontend/src/data/pricingData.js`. That file only keeps scenario presets.
+
+## Environment Variables
+
+### Frontend
+
+```env
+VITE_API_BASE_URL=https://your-backend-domain.example.com
+```
+
+### Backend
+
+```env
+DEEPSEEK_API_KEY=your_deepseek_api_key_here
+DEEPSEEK_BASE_URL=https://api.deepseek.com
+DEEPSEEK_MODEL=deepseek-chat
+BACKEND_HOST=0.0.0.0
+CORS_ORIGIN=https://your-frontend-domain.example.com
+REDIS_URL=rediss://default:password@your-redis-host:6379
+REDIS_PRICING_CACHE_KEY=api-cost:pricing-cache
+REDIS_CONNECT_TIMEOUT_MS=2000
+```
+
+Do not commit `.env` or any API keys to GitHub.
+
+## Deployment Notes
+
+### Frontend on Vercel
+
+- Build command: `npm run build`
+- Output directory: `frontend/dist`
+- Environment variable:
+
+```env
+VITE_API_BASE_URL=https://api-cost-backend.onrender.com
+```
+
+### Backend on Render
+
+- Runtime: Node
+- Build command: `npm install`
+- Start command: `npm run start`
+- Required environment variables:
+
+```env
+DEEPSEEK_API_KEY=your_deepseek_api_key_here
+DEEPSEEK_BASE_URL=https://api.deepseek.com
+DEEPSEEK_MODEL=deepseek-chat
+BACKEND_HOST=0.0.0.0
+CORS_ORIGIN=https://api-cost-eta.vercel.app
+REDIS_URL=your_upstash_redis_url
+REDIS_PRICING_CACHE_KEY=api-cost:pricing-cache
+REDIS_CONNECT_TIMEOUT_MS=2000
+```
+
+Render provides `PORT` automatically, so `BACKEND_PORT` is not required in production.
+
+## Known Limitations
+
+- Some official pricing pages block server-side scraping, so extraction may miss providers or return partial data.
+- DeepSeek API quota is required for cache refreshes. If quota is exhausted, refreshing pricing data fails.
+- The project estimates cost only. It does not compare model quality, latency, context length, reliability, or benchmark performance.
+- LLM-extracted pricing can be wrong or outdated, so important prices should be manually verified against official pages.
+- Render free instances can sleep after inactivity, so the first request may take tens of seconds.
+- The refresh button can force a new DeepSeek call, which may consume API credits.
+- Redis is recommended for deployment, but the local file fallback is not suitable for serverless environments.
+
+## Security Notes
+
+- API keys are kept only on the backend.
+- The frontend only receives public pricing data.
+- `.env`, build output, cache files, and `node_modules` are ignored by Git.
+
+## Links
+
+- Live frontend: https://api-cost-eta.vercel.app
+- Backend health check: https://api-cost-backend.onrender.com/api/health
+- GitHub Pages writeup: https://w-wangxi.github.io/API_COST/
